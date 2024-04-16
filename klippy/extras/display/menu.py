@@ -721,6 +721,7 @@ class MenuManager:
         # register itself for printer callbacks
         self.printer.add_object('menu', self)
         self.printer.register_event_handler("klippy:ready", self.handle_ready)
+        #self.printer.register_event_handler("gcode:belt", self.belt_test)
         # register for key events
         menu_keys.MenuKeys(config, self.key_event)
         # Load local config file in same directory as current module
@@ -954,13 +955,13 @@ class MenuManager:
                     self.changRootMain()
                 if name in ["Cancel printing", "Resume printing"]:
                     self.back()
-                if name in ["Calibrate Zoffset", "Cooldown", "Start printing", "Show IP", "Bed Mesh", "Quad Gantry Lvl", "Auto-Calibrate", "Preheat PLA", "Preheat ABS"]:
+                if name in ["Belt test", "Calibrate Zoffset", "Cooldown", "Start printing", "Show IP", "Bed Mesh", "Quad Gantry Lvl", "Auto-Calibrate", "Preheat PLA", "Preheat ABS"]:
                     self.back()
                     self.back()
                     if name == "Calibrate Zoffset":
                         self.printer.send_event("klippy:start_print")
                         self.gcode.run_script("_Delay_Calibrate")
-                if name in ["Tune Hotend PID", "Tune Hotbed PID"]:
+                if name in ["Load Fil", "Unload Fil", "Tune Hotend PID", "Tune Hotbed PID"]:
                     self.back()
                     self.back()
                     self.back()
