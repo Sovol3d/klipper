@@ -702,7 +702,7 @@ class MenuManager:
         self.gcode_queue = []
         self.context = {}
         self.root = None
-        plr_bool = ""    #self.read_varibles_cfg_value('was_interrupted')
+        plr_bool = self.read_varibles_cfg_value('was_interrupted')
         menu_title = ''
         self.config = config
         if plr_bool == "True":

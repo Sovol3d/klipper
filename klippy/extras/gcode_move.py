@@ -5,6 +5,8 @@
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
 import json
+import configparser
+import os
 
 class GCodeMove:
     def __init__(self, config):
@@ -51,6 +53,7 @@ class GCodeMove:
         self.saved_states = {}
         self.move_transform = self.move_with_transform = None
         self.position_with_transform = (lambda: [0., 0., 0., 0.])
+        self.z_positon = ""
 
         # self.v_sd = self.printer.lookup_object('virtual_sdcard', None)
     def _handle_ready(self):
@@ -115,22 +118,44 @@ class GCodeMove:
     def reset_last_position(self):
         if self.is_printer_ready:
             self.last_position = self.position_with_transform()
+
+    def modify_cfg_value(self, option, new_value):
+        _config = configparser.ConfigParser()
+        _config.read('/home/sovol/printer_data/config/saved_variables.cfg')
+        _config.set('Variables', option, new_value)
+        with open('/home/sovol/printer_data/config/saved_variables.cfg', 'w') as file:
+            _config.write(file)
+
     # G-Code movement commands
     def cmd_G1(self, gcmd):
         # Move
         params = gcmd.get_command_parameters()
-        #logging.info("++++++++++++cmd_G1+++++++++++:%s", params)
-        if 'G' in params and 'Z' in params and 'X' in params and 'Y' in params and 'F' in params:
+        #logging.info("++++++++++++cmd_G1 filename:%s", filename)
+        # and 'F' in params     
+        if 'G' in params and 'X' in params and 'Y' in params and 'Z' in params:
             if self.v_sd.cmd_from_sd:
                 #commandline = gcmd.get_commandline()
+                cfg_file_path = '/home/sovol/printer_data/config/saved_variables.cfg'
+                _config = configparser.ConfigParser()
+                _config.read(cfg_file_path)
+                was_inter = _config.get('Variables', 'was_interrupted')
+                last_file = _config.get('Variables', 'last_file')
+                if 'Z' in params and float(params['Z']) > 0.2 and was_inter == 'False' and 'zoffset_test.gcode' not in last_file:
+                    self.modify_cfg_value('was_interrupted', "True")
+
+                # if 'Z' in params:       #for test
+                #     self.z_positon = params['Z']
+                # if self.z_positon != "":    #for test
                 content = {
                     'commandline': gcmd.get_commandline(),
-                    'Z': params['Z'],
+                    'Z': params['Z'],                       #self.z_positon, 
                     'extrude_type': 'M82' if self.absolute_extrude else 'M83',
                     'e_extrude_abs': 0 #self.Coord(*self.move_position)[3]
                 }
                 with open("/home/sovol/sovol_plr_height", 'w') as height:
                     json.dump(content, height)
+                    height.flush()
+                    os.fsync(height.fileno())
         try:
             for pos, axis in enumerate('XYZ'):
                 if axis in params:
